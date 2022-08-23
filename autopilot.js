@@ -347,7 +347,7 @@ async function checkOnRunningScripts(ns, player) {
 	// Hacking earns no money in BN8, so prioritize XP
 	if (player.bitNodeN == 8) daemonArgs.push("--xp-only");
 	// By default, don't join bladeburner, since it slows BN12 progression by requiring combat augs not used elsewhere
-	if (options['enable-bladeburner']) daemonArgs.push('--run-script', getFilePath('bladeburner.js'));
+	if (options['enable-bladeburner'] || player.bitNodeN == 7 || (player.bitNodeN == 6 && (7 in unlockedSFs))) daemonArgs.push('--run-script', getFilePath('bladeburner.js'));
 	// If we have SF4, but not level 3, instruct daemon.js to reserve additional home RAM
 	if ((4 in unlockedSFs) && unlockedSFs[4] < 3)
 		daemonArgs.push('--reserved-ram', 32 * (unlockedSFs[4] == 2 ? 4 : 16));
@@ -376,7 +376,7 @@ async function checkOnRunningScripts(ns, player) {
 		"--fast-crimes-only", // Essentially means we do mug until we can do homicide, then stick to homicide
 		"--get-invited-to-every-faction" // Join factions even we have all their augs. Good for having NeuroFlux providers
 	];
-	if (!options['enable-bladeburner']) workForFactionsArgs.push("--no-bladeburner-check")
+	if (!(options['enable-bladeburner'] || player.bitNodeN == 7 || (player.bitNodeN == 6 && (7 in unlockedSFs)))) workForFactionsArgs.push("--no-bladeburner-check")
 	// The following args are ideal when running 'work-for-factions.js' to rush unlocking gangs (earn karma)
 	const rushGangsArgs = workForFactionsArgs.concat(...[ // Everything above, plus...
 		"--crime-focus", // Start off by trying to work for each of the crime factions (generally have combat reqs)
