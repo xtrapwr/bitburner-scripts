@@ -657,13 +657,23 @@ async function monitorStudies(ns, stat, requirement) {
 
 /** @param {NS} ns */
 export async function waitForFactionInvite(ns, factionName, maxWaitTime = waitForFactionInviteTime) {
-    ns.print(`Waiting for invite from faction "${factionName}"...`);
+    ns.print(`Waiting for invite from faction "${factionName}" (game may delay this up to ${formatDuration(maxWaitTime)})...`);
     let waitTime = maxWaitTime;
+    let lastFactionCount = null;
     do {
         var invitations = await checkFactionInvites(ns);
         var joinedFactions = (await getPlayerInfo(ns)).factions;
+        const factionCount = invitations.length + joinedFactions.length;
         if (invitations.includes(factionName) || joinedFactions.includes(factionName))
             break;
+        // If we recieved an invite, just not for the faction we wanted, reset the timer
+        if (lastFactionCount === null) lastFactionCount = factionCount;
+        if (factionCount > lastFactionCount) {
+            ns.print(`INFO: Recieved a new invite, but not from "${factionName}". ` +
+                `Invites are sent on a delay, so resetting the ${formatDuration(maxWaitTime)} timer...`);
+            waitTime = maxWaitTime;
+            lastFactionCount = factionCount;
+        }
         await ns.sleep(loopSleepInterval);
     } while (!invitations.includes(factionName) && !joinedFactions.includes(factionName) && (waitTime -= loopSleepInterval) > 0);
     if (joinedFactions.includes(factionName)) // Another script may have auto-joined this faction before we could
@@ -1065,7 +1075,7 @@ export async function workForMegacorpFactionInvite(ns, factionName, waitForInvit
             lastStatusUpdateTime = Date.now();
             if (!backdoored) { // Check if an external script has backdoored this company's server yet. If so, it affects our ETA. (Don't need to check again once we discover it is)
                 backdoored = await checkForBackdoor(ns, companyName);
-                repRequiredForFaction -= 100_000;
+                if (backdoored) repRequiredForFaction -= 100_000;
             }
             // Measure rep gain rate to give an ETA
             const repGainRate = !isWorking ? 0 : await measureCompanyRepGainRate(ns, companyName);
